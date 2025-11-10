@@ -23,17 +23,19 @@
       <div class="logo">🛒</div>
       <h1 id="formTitle">Entrar</h1>
 
+      <!-- Form de Login -->
       <form id="formLogin" class="vstack gap-3">
         <input name="email" type="email" class="form-control" placeholder="E-mail" required>
         <input name="password" type="password" class="form-control" placeholder="Senha" required>
-        <button class="btn btn-primary w-100">Entrar</button>
+        <button class="btn btn-primary w-100" type="submit">Entrar</button>
       </form>
 
+      <!-- Form de Cadastro -->
       <form id="formRegister" class="vstack gap-3 d-none">
         <input name="full_name" type="text" class="form-control" placeholder="Nome completo" required>
         <input name="email" type="email" class="form-control" placeholder="E-mail" required>
         <input name="password" type="password" class="form-control" placeholder="Senha (mínimo 6 caracteres)" minlength="6" required>
-        <button class="btn btn-success w-100">Cadastrar</button>
+        <button class="btn btn-success w-100" type="submit">Cadastrar</button>
       </form>
 
       <div class="text-center mt-3 small">
@@ -57,51 +59,67 @@
       const toggleLink = document.getElementById("toggleLink");
       const msg = document.getElementById("msg");
 
+      // Alterna Login <-> Cadastro
       toggleLink.addEventListener("click", () => {
-        const isLogin = formLogin.classList.contains("d-none");
+        const showingRegister = !formRegister.classList.contains("d-none");
         formLogin.classList.toggle("d-none");
         formRegister.classList.toggle("d-none");
-        formTitle.textContent = isLogin ? "Entrar" : "Cadastrar";
-        toggleText.textContent = isLogin ? "Não tem conta?" : "Já tem conta?";
-        toggleLink.textContent = isLogin ? "Cadastrar" : "Entrar";
+        formTitle.textContent = showingRegister ? "Entrar" : "Cadastrar";
+        toggleText.textContent = showingRegister ? "Não tem conta?" : "Já tem conta?";
+        toggleLink.textContent = showingRegister ? "Cadastrar" : "Entrar";
         msg.textContent = "";
       });
 
-      async function postForm(url, data, isForm=false){
-        const opts={method:"POST",headers:{}};
-        if(isForm){
-          opts.headers["Content-Type"]="application/x-www-form-urlencoded";
-          const p=new URLSearchParams();Object.entries(data).forEach(([k,v])=>p.append(k,v));
-          opts.body=p.toString();
-        }else{
-          opts.headers["Content-Type"]="application/json";
-          opts.body=JSON.stringify(data);
-        }
-        const res=await fetch(url,opts);
-        const body=await res.json().catch(()=>({}));
-        if(!res.ok) throw new Error(body.detail||JSON.stringify(body));
+      // Helper para POST
+      async function postJson(url, data){
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(data),
+        });
+        const body = await res.json().catch(()=> ({}));
+        if(!res.ok) throw new Error(body.detail || "Erro ao processar requisição.");
         return body;
       }
 
+      // Login (envia JSON: { email, password })
       formLogin.addEventListener("submit", async (e)=>{
-        e.preventDefault(); msg.textContent="Autenticando...";
+        e.preventDefault();
+        msg.textContent = "Autenticando...";
         try{
-          const f=e.target;
-          const token=await postForm("/auth/login",{username:f.email.value.trim(),password:f.password.value},true);
-          localStorage.setItem("access_token", token.access_token);
-          msg.textContent="✅ Login bem-sucedido! Redirecionando...";
-          setTimeout(()=>location.href="/static/index.html",700);
-        }catch(err){ msg.textContent="❌ "+err.message; }
+          const f = e.target;
+          const payload = {
+            email: f.email.value.trim(),
+            password: f.password.value
+          };
+          const result = await postJson("/auth/login", payload);
+          localStorage.setItem("access_token", result.access_token);
+          if(result.user) localStorage.setItem("user", JSON.stringify(result.user));
+          msg.textContent = "✅ Login bem-sucedido! Redirecionando...";
+          setTimeout(()=> location.href="/static/index.html", 700);
+        }catch(err){
+          msg.textContent = "❌ " + err.message;
+        }
       });
 
+      // Cadastro
       formRegister.addEventListener("submit", async (e)=>{
-        e.preventDefault(); msg.textContent="Criando conta...";
+        e.preventDefault();
+        msg.textContent = "Criando conta...";
         try{
-          const f=e.target;
-          await postForm("/auth/register",{full_name:f.full_name.value.trim(),email:f.email.value.trim(),password:f.password.value});
-          msg.textContent="✅ Conta criada! Agora faça login.";
+          const f = e.target;
+          const payload = {
+            full_name: f.full_name.value.trim(),
+            email: f.email.value.trim(),
+            password: f.password.value
+          };
+          await postJson("/auth/register", payload);
+          msg.textContent = "✅ Conta criada! Agora faça login.";
+          // Volta para tela de login automaticamente
           toggleLink.click();
-        }catch(err){ msg.textContent="❌ "+err.message; }
+        }catch(err){
+          msg.textContent = "❌ " + err.message;
+        }
       });
     </script>
   </body>

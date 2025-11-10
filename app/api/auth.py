@@ -1,39 +1,57 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr
+
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserOut
-from app.core.security import verify_password, hash_password, create_access_token, decode_token
+from app.core.security import verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/register", response_model=UserOut, status_code=201)
-def register(payload: UserCreate, db: Session = Depends(get_db)):
-    exists = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
-    if exists:
-        raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
-    obj = User(full_name=payload.full_name, email=payload.email, password_hash=hash_password(payload.password))
-    db.add(obj)
-    db.commit()
-    db.refresh(obj)
-    return obj
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.execute(select(User).where(User.email == form_data.username)).scalar_one_or_none()
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Credenciais inválidas")
-    token = create_access_token(str(user.id))
-    return {"access_token": token, "token_type": "bearer"}
+async def login(request: Request, db: Session = Depends(get_db)):
+    """
+    Aceita tanto JSON {"email": "...", "password": "..."} quanto form-urlencoded.
+    """
+    try:
+        content_type = (request.headers.get("content-type") or "").lower()
+        if "application/json" in content_type:
+            data = await request.json()
+        else:
+            form = await request.form()
+            data = dict(form)
 
-@router.get("/me", response_model=UserOut)
-def me(token: str, db: Session = Depends(get_db)):
-    user_id = decode_token(token)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    user = db.get(User, int(user_id))
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return user
+        email = (data.get("email") or data.get("username") or "").strip()
+        password = data.get("password") or ""
+
+    except Exception:
+        raise HTTPException(status_code=400, detail="Erro ao ler corpo da requisição")
+
+    # Validação manual e com Pydantic
+    if not email or not password:
+        raise HTTPException(status_code=422, detail="Campos obrigatórios: email e senha")
+
+    try:
+        # Instancia o modelo LoginIn (valida o formato do e-mail automaticamente)
+        login_data = LoginIn(email=email, password=password)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail="E-mail inválido")
+
+    # Busca o usuário no banco
+    user = db.execute(select(User).where(User.email == login_data.email)).scalar_one_or_none()
+    if not user or not verify_password(login_data.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+
+    # Cria token JWT
+    token = create_access_token({"sub": str(user.id), "email": user.email})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {"id": user.id, "full_name": user.full_name, "email": user.email},
+    }

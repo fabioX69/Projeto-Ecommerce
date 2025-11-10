@@ -1,3 +1,4 @@
+# app/api/routes.py
 from fastapi import APIRouter
 from app.api.auth import router as auth_router
 from app.api.products import router as products_router
