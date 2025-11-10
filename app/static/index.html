@@ -1,255 +1,130 @@
 <!doctype html>
 <html lang="pt-br" data-bs-theme="dark">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Painel | Projeto E-commerce</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-      body{background:#0b1220;color:#e5e7eb}
-      .navbar{border-bottom:1px solid rgba(255,255,255,.1)}
-      .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)}
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Projeto E-commerce</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
       <div class="container d-flex justify-content-between align-items-center">
         <a class="navbar-brand fw-bold" href="#">🛒 Projeto E-commerce</a>
         <div class="d-flex align-items-center gap-2">
-          <span id="userLabel" class="small text-secondary"></span>
-          <button id="btnLogout" class="btn btn-sm btn-outline-light">Sair</button>
+          <span id="navUser" class="text-info fw-semibold d-none"></span>
+          <button id="btnLogout" class="btn btn-outline-primary btn-sm d-none">Sair</button>
+          <a id="btnAuth" href="/static/auth.html" class="btn btn-outline-light btn-sm">Entrar / Cadastrar</a>
         </div>
       </div>
     </nav>
 
-    <main class="container py-4">
-      <div class="row g-3">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h5 class="card-title">Listagem & Filtros</h5>
-              <div class="row g-2 align-items-end">
-                <div class="col-sm-3"><label class="form-label">Buscar (q)</label><input id="q" class="form-control" placeholder="ex.: mouse"></div>
-                <div class="col-sm-3"><label class="form-label">Categoria</label><input id="category" class="form-control" placeholder="ex.: periferico"></div>
-                <div class="col-sm-2"><label class="form-label">Preço mín.</label><input id="min_price" type="number" step="0.01" class="form-control"></div>
-                <div class="col-sm-2"><label class="form-label">Preço máx.</label><input id="max_price" type="number" step="0.01" class="form-control"></div>
-                <div class="col-sm-2"><div class="form-check mt-4"><input id="order_by_price" class="form-check-input" type="checkbox"><label class="form-check-label">Ordenar por preço (MergeSort)</label></div></div>
-                <div class="col-sm-2"><label class="form-label">Limit</label><input id="limit" type="number" class="form-control" value="20" min="1" max="200"></div>
-                <div class="col-sm-2"><label class="form-label">Offset</label><input id="offset" type="number" class="form-control" value="0" min="0"></div>
-                <div class="col-sm-2"><button id="btnLoad" class="btn btn-primary w-100 mt-2">Carregar</button></div>
+    <main class="container pb-5">
+      <!-- Listagem e filtros -->
+      <section class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Listagem &amp; Filtros</h5>
+
+          <div class="row g-2 align-items-end">
+            <div class="col-sm-3">
+              <label class="form-label">Buscar (q)</label>
+              <input id="q" class="form-control" placeholder="ex.: mouse" />
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label">Categoria</label>
+              <input id="category" class="form-control" placeholder="ex.: periferico" />
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Preço mín.</label>
+              <input id="min_price" type="number" step="0.01" class="form-control" />
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Preço máx.</label>
+              <input id="max_price" type="number" step="0.01" class="form-control" />
+            </div>
+            <div class="col-sm-2">
+              <div class="form-check mt-4">
+                <input id="order_by_price" class="form-check-input" type="checkbox" />
+                <label class="form-check-label">Ordenar por preço</label>
               </div>
-              <div class="table-responsive mt-3">
-                <table class="table table-sm align-middle">
-                  <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Preço</th><th></th></tr></thead>
-                  <tbody id="tbody"></tbody>
-                </table>
-              </div>
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Limit</label>
+              <input id="limit" type="number" min="1" max="200" value="20" class="form-control" />
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label">Offset</label>
+              <input id="offset" type="number" min="0" value="0" class="form-control" />
+            </div>
+            <div class="col-sm-2">
+              <button id="btnLoad" class="btn btn-primary w-100 mt-2">Carregar</button>
             </div>
           </div>
-        </div>
 
-        <div class="col-lg-6">
-          <div class="card shadow-sm"><div class="card-body">
-            <h5 class="card-title">Criar Produto (requer login)</h5>
-            <form id="formCreate" class="row g-2">
-              <div class="col-sm-6"><input name="name" class="form-control" placeholder="Nome" required></div>
-              <div class="col-sm-4"><input name="category" class="form-control" placeholder="Categoria"></div>
-              <div class="col-sm-2"><input name="price" type="number" step="0.01" class="form-control" placeholder="Preço" required></div>
-              <div class="col-12 d-grid"><button class="btn btn-success">Criar</button></div>
-            </form>
-            <pre id="createOut" class="mt-3 small"></pre>
-          </div></div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Categoria</th>
+                  <th class="text-end">Preço</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
         </div>
+      </section>
 
-        <div class="col-lg-6">
-          <div class="card shadow-sm"><div class="card-body">
-            <h5 class="card-title">Busca Binária por Preço</h5>
-            <div class="row g-2 align-items-end">
-              <div class="col-8"><input id="priceSearch" type="number" step="0.01" class="form-control" placeholder="Preço exato"></div>
-              <div class="col-4 d-grid"><button id="btnSearchPrice" class="btn btn-outline-light">Buscar</button></div>
+      <div class="row g-4">
+        <!-- Buscar por ID -->
+        <section class="col-lg-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Buscar Produto por ID</h5>
+              <div class="row g-2">
+                <div class="col-sm-8">
+                  <label class="form-label">ID do Produto</label>
+                  <input id="by_id" type="number" class="form-control" placeholder="Ex.: 3" />
+                </div>
+                <div class="col-sm-4 d-grid align-items-end">
+                  <button id="btnSearchId" class="btn btn-outline-light mt-sm-4">Buscar</button>
+                </div>
+              </div>
+              <pre id="byIdOut" class="small mt-3"></pre>
             </div>
-            <pre id="searchOut" class="mt-3 small"></pre>
-          </div></div>
-        </div>
+          </div>
+        </section>
 
-        <div class="col-lg-6">
-          <div class="card shadow-sm"><div class="card-body">
-            <h5 class="card-title">Top-N por Preço (Heap)</h5>
-            <div class="row g-2 align-items-end">
-              <div class="col-4"><input id="topN" type="number" min="1" value="3" class="form-control"></div>
-              <div class="col-8 d-grid"><button id="btnTopN" class="btn btn-outline-warning">Carregar Top-N</button></div>
+        <!-- Criar produto -->
+        <section class="col-lg-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Criar Produto</h5>
+              <form id="formCreate" class="row g-2">
+                <div class="col-sm-6">
+                  <input name="name" class="form-control" placeholder="Nome" required />
+                </div>
+                <div class="col-sm-4">
+                  <input name="category" class="form-control" placeholder="Categoria" />
+                </div>
+                <div class="col-sm-2">
+                  <input name="price" type="number" step="0.01" class="form-control" placeholder="Preço" required />
+                </div>
+                <div class="col-12 d-grid">
+                  <button class="btn btn-success">Criar</button>
+                </div>
+              </form>
+              <pre id="createOut" class="small mt-3"></pre>
             </div>
-            <pre id="topOut" class="mt-3 small"></pre>
-          </div></div>
-        </div>
-
-        <div class="col-lg-6">
-          <div class="card shadow-sm"><div class="card-body">
-            <h5 class="card-title">BST (Árvore Binária)</h5>
-            <div class="d-flex gap-2">
-              <button id="btnBSTOrder" class="btn btn-secondary">In-order por preço</button>
-              <input id="bstName" class="form-control" placeholder="Nome exato">
-              <button id="btnBSTSearch" class="btn btn-secondary">Buscar por nome</button>
-            </div>
-            <pre id="bstOut" class="mt-3 small"></pre>
-          </div></div>
-        </div>
+          </div>
+        </section>
       </div>
     </main>
 
-    <script>
-      // ---------- Guarda de rota ----------
-      const token = localStorage.getItem("access_token");
-      if(!token){
-        location.href = "/static/auth.html";
-      }
-
-      // Header com usuário + logout
-      const user = JSON.parse(localStorage.getItem("user") || "null");
-      document.getElementById("userLabel").textContent = user ? `${user.full_name} • ${user.email}` : "";
-      document.getElementById("btnLogout").addEventListener("click", ()=>{
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("user");
-        location.href = "/static/auth.html";
-      });
-
-      // Helpers
-      async function getJson(url){
-        const res = await fetch(url);
-        const body = await res.json();
-        if(!res.ok) throw new Error(body.detail || "Falha na requisição");
-        return body;
-      }
-      async function authJson(url, method, data){
-        const res = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("access_token")||""}`,
-          },
-          body: data ? JSON.stringify(data) : undefined
-        });
-        const body = await res.json().catch(()=> ({}));
-        if(!res.ok) throw new Error(body.detail || "Falha na requisição");
-        return body;
-      }
-
-      // Listagem & filtros
-      const q = document.getElementById("q");
-      const category = document.getElementById("category");
-      const min_price = document.getElementById("min_price");
-      const max_price = document.getElementById("max_price");
-      const order_by_price = document.getElementById("order_by_price");
-      const limit = document.getElementById("limit");
-      const offset = document.getElementById("offset");
-      const tbody = document.getElementById("tbody");
-      document.getElementById("btnLoad").addEventListener("click", load);
-
-      async function load(){
-        const params = new URLSearchParams();
-        if(q.value) params.set("q", q.value);
-        if(category.value) params.set("category", category.value);
-        if(min_price.value) params.set("min_price", min_price.value);
-        if(max_price.value) params.set("max_price", max_price.value);
-        if(order_by_price.checked) params.set("order_by_price", "true");
-        params.set("limit", limit.value || "20");
-        params.set("offset", offset.value || "0");
-        const data = await getJson(`/products?${params.toString()}`);
-        tbody.innerHTML = data.map(p => `
-          <tr>
-            <td>${p.id}</td>
-            <td>${p.name||""}</td>
-            <td>${p.category||""}</td>
-            <td>R$ ${p.price?.toFixed(2)}</td>
-            <td class="text-end">
-              <button class="btn btn-sm btn-outline-warning" onclick="editProduct(${p.id})">Editar</button>
-              <button class="btn btn-sm btn-outline-danger ms-2" onclick="delProduct(${p.id})">Excluir</button>
-            </td>
-          </tr>
-        `).join("");
-      }
-
-      // Criar
-      const formCreate = document.getElementById("formCreate");
-      const createOut = document.getElementById("createOut");
-      formCreate.addEventListener("submit", async (e)=>{
-        e.preventDefault();
-        const f = e.target;
-        try{
-          const obj = await authJson("/products/", "POST", {
-            name: f.name.value.trim(),
-            category: f.category.value.trim(),
-            price: Number(f.price.value),
-          });
-          createOut.textContent = JSON.stringify(obj, null, 2);
-          f.reset(); load();
-        }catch(err){
-          createOut.textContent = "❌ " + err.message;
-        }
-      });
-
-      // Editar / Excluir
-      window.editProduct = async (id)=>{
-        const name = prompt("Novo nome (deixe em branco para manter)");
-        const category = prompt("Nova categoria (deixe em branco para manter)");
-        const priceStr = prompt("Novo preço (deixe em branco para manter)");
-        const payload = {};
-        if(name) payload.name = name;
-        if(category) payload.category = category;
-        if(priceStr) payload.price = Number(priceStr);
-        if(Object.keys(payload).length===0) return;
-        try{
-          await authJson(`/products/${id}`, "PUT", payload);
-          load();
-        }catch(err){ alert("Erro: " + err.message); }
-      }
-      window.delProduct = async (id)=>{
-        if(!confirm("Tem certeza que deseja excluir?")) return;
-        try{
-          await authJson(`/products/${id}`, "DELETE");
-          load();
-        }catch(err){ alert("Erro: " + err.message); }
-      }
-
-      // Algoritmos
-      document.getElementById("btnSearchPrice").addEventListener("click", async ()=>{
-        const val = Number(document.getElementById("priceSearch").value);
-        const el = document.getElementById("searchOut");
-        try{
-          const data = await getJson(`/products/search/by-price?price=${val}`);
-          el.textContent = JSON.stringify(data, null, 2);
-        }catch(err){ el.textContent = "❌ " + err.message; }
-      });
-
-      document.getElementById("btnTopN").addEventListener("click", async ()=>{
-        const n = Number(document.getElementById("topN").value);
-        const el = document.getElementById("topOut");
-        try{
-          const data = await getJson(`/products/topn/by-price?n=${n}`);
-          el.textContent = JSON.stringify(data, null, 2);
-        }catch(err){ el.textContent = "❌ " + err.message; }
-      });
-
-      document.getElementById("btnBSTOrder").addEventListener("click", async ()=>{
-        const el = document.getElementById("bstOut");
-        try{
-          const data = await getJson(`/products/bst/inorder/by-price`);
-          el.textContent = JSON.stringify(data, null, 2);
-        }catch(err){ el.textContent = "❌ " + err.message; }
-      });
-
-      document.getElementById("btnBSTSearch").addEventListener("click", async ()=>{
-        const name = document.getElementById("bstName").value.trim();
-        const el = document.getElementById("bstOut");
-        try{
-          const url = `/products/bst/search/by-name?name=${encodeURIComponent(name)}`;
-          const data = await getJson(url);
-          el.textContent = JSON.stringify(data, null, 2);
-        }catch(err){ el.textContent = "❌ " + err.message; }
-      });
-
-      // carrega a tabela inicial
-      load();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/app.js" defer></script>
   </body>
 </html>
